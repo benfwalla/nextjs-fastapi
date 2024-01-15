@@ -2,6 +2,8 @@ import pandas as pd
 import warnings
 from dotenv import load_dotenv
 import os
+import requests
+import json
 
 load_dotenv()
 hardcover_bearer_token = os.getenv('HARDCOVER_BEARER_TOKEN')
@@ -58,4 +60,55 @@ def get_all_goodreads_user_books(user):
         all_books_df = pd.concat([all_books_df, books_on_page], ignore_index=True)
         page_num += 1
 
-    return all_books_df.to_json(orient='records')
+    return all_books_df
+
+def get_genres_from_hardcover(goodreads_ids):
+    url = "https://hardcover-production.hasura.app/v1/graphql"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {hardcover_bearer_token}'
+    }
+    
+    # Convert the Series or list of IDs to the required string format
+    ids_string = ', '.join(f'"{id_}"' for id_ in goodreads_ids)
+
+    # Construct the GraphQL query
+    query = f"""
+    query GetBookByGoodreadsIDs {{
+      book_mappings(
+        where: {{platform: {{id: {{_eq: 1}}}}, external_id: {{_in: [{ids_string}]}}}}
+      ) {{
+        external_id
+        book {{
+          taggings {{
+            tag {{
+              tag
+            }}
+          }}
+        }}
+      }}
+    }}
+    """
+
+    payload = json.dumps({"query": query, "variables": {}})
+    response = requests.post(url, headers=headers, data=payload).json()
+
+    books_json = response['data']['book_mappings']
+    flattened_data = []
+
+    # Iterate through each book entry in the JSON
+    for entry in books_json:
+        book_id = entry['external_id']
+        
+        # Flatten the taggings into a single string separated by commas
+        tags = [tag['tag']['tag'] for tag in entry['book']['taggings']]
+        
+        # Append the flattened data to the list
+        flattened_data.append({'external_id': book_id, 'tags': tags})
+
+    genres_df = pd.DataFrame(flattened_data)
+
+    return genres_df
+
+def combine_goodreads_and_hardcover(goodreads_df, hardcover_df):
+    return pd.merge(goodreads_df, hardcover_df, left_on='goodreads_id', right_on='external_id', how='left')
