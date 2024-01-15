@@ -1,24 +1,27 @@
-import pandas as pd
-import warnings
-from dotenv import load_dotenv
-import os
-import requests
 import json
-from fastapi import HTTPException, status, Security
+import os
+import warnings
+
+import pandas as pd
+import requests
+from dotenv import load_dotenv
+from fastapi import HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 
+# Load environment variables and set pandas options
 load_dotenv()
-HARDCOVER_BEARER_TOKEN = os.getenv('HARDCOVER_BEARER_TOKEN')
-BOOKBLEND_API_KEY = os.getenv("BOOKBLEND_API_KEY")
-
-api_key_header = APIKeyHeader(name="X-API-Key")
-
 warnings.filterwarnings('ignore')
-
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', None)
+
+# Set constants for environment variables
+HARDCOVER_BEARER_TOKEN = os.getenv('HARDCOVER_BEARER_TOKEN')
+BOOKBLEND_API_KEY = os.getenv("BOOKBLEND_API_KEY")
+
+# API key header setup
+api_key_header = APIKeyHeader(name="X-API-Key")
 
 def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
     if api_key_header == BOOKBLEND_API_KEY:

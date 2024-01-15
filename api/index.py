@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Response, Security
-from api.helper_functions import get_all_goodreads_user_books, get_genres_from_hardcover, combine_goodreads_and_hardcover, get_api_key
+from api.helper_functions import (combine_goodreads_and_hardcover, 
+                                  get_all_goodreads_user_books, 
+                                  get_api_key, 
+                                  get_genres_from_hardcover)
 
 app = FastAPI()
 
