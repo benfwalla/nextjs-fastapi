@@ -4,9 +4,14 @@ from dotenv import load_dotenv
 import os
 import requests
 import json
+from fastapi import HTTPException, status, Security
+from fastapi.security import APIKeyHeader
 
 load_dotenv()
-hardcover_bearer_token = os.getenv('HARDCOVER_BEARER_TOKEN')
+HARDCOVER_BEARER_TOKEN = os.getenv('HARDCOVER_BEARER_TOKEN')
+BOOKBLEND_API_KEY = os.getenv("BOOKBLEND_API_KEY")
+
+api_key_header = APIKeyHeader(name="X-API-Key")
 
 warnings.filterwarnings('ignore')
 
@@ -14,6 +19,15 @@ pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', None)
+
+def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
+    if api_key_header == BOOKBLEND_API_KEY:
+        return api_key_header
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="401: Invalid API Key",
+    )
+
 
 def get_goodreads_user_books_by_page(user, page_num=1):
     url = f'https://www.goodreads.com/review/list/{user}?page={page_num}'
@@ -66,7 +80,7 @@ def get_genres_from_hardcover(goodreads_ids):
     url = "https://hardcover-production.hasura.app/v1/graphql"
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {hardcover_bearer_token}'
+        'Authorization': f'Bearer {HARDCOVER_BEARER_TOKEN}'
     }
     
     # Convert the Series or list of IDs to the required string format

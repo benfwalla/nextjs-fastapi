@@ -1,14 +1,14 @@
-from fastapi import FastAPI, Response
-from api.helper_functions import get_all_goodreads_user_books, get_genres_from_hardcover, combine_goodreads_and_hardcover
+from fastapi import FastAPI, Response, Security
+from api.helper_functions import get_all_goodreads_user_books, get_genres_from_hardcover, combine_goodreads_and_hardcover, get_api_key
 
 app = FastAPI()
 
 @app.get("/api/python")
-def hello_world():
+def hello_world(api_key: str = Security(get_api_key)):
     return {"message": "Hello World"}
 
 @app.get("/api/books/{user}")
-def get_user_books(user):
+def get_user_books(user, api_key: str = Security(get_api_key)):
     # Ben Walace's Goodreads user ID is 42944663
     print(f"Collecting Goodreads Books for {user}...")
     goodreads_df = get_all_goodreads_user_books(user)
